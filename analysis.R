@@ -75,13 +75,71 @@ d <- d %>% mutate(...1 = NULL, ...2 = NULL, ...4 = NULL) # 439 cols now
 d_noNA_full <- drop_na(d) # 75 cases with full data (also removes MRI NAs)
 d_noNA <- d[complete.cases(d[,c(37:439)]),] # 99 cases with full protein data but not necessarily MRI
 
+# creating my own version of p.adjust to allow for meff() input ====
+my.p.adj <- function (p, method = p.adjust.methods, n = length(p)) 
+{
+  method <- match.arg(method)
+  if (method == "fdr") 
+    method <- "BH"
+  nm <- names(p)
+  p <- as.numeric(p)
+  p0 <- setNames(p, nm)
+  if (all(nna <- !is.na(p))) 
+    nna <- TRUE
+  else p <- p[nna]
+  lp <- length(p)
+  # stopifnot(n >= lp)
+  # if (n <= 1) 
+    # return(p0)
+  if (n == 2 && method == "hommel") 
+    method <- "hochberg"
+  p0[nna] <- switch(method, bonferroni = pmin(1, n * p), holm = {
+    i <- seq_len(lp)
+    o <- order(p)
+    ro <- order(o)
+    pmin(1, cummax((n + 1L - i) * p[o]))[ro]
+  }, hommel = {
+    if (n > lp) p <- c(p, rep.int(1, n - lp))
+    i <- seq_len(n)
+    o <- order(p)
+    p <- p[o]
+    ro <- order(o)
+    q <- pa <- rep.int(min(n * p/i), n)
+    for (j in (n - 1L):2L) {
+      ij <- seq_len(n - j + 1L)
+      i2 <- (n - j + 2L):n
+      q1 <- min(j * p[i2]/(2L:j))
+      q[ij] <- pmin(j * p[ij], q1)
+      q[i2] <- q[n - j + 1L]
+      pa <- pmax(pa, q)
+    }
+    pmax(pa, p)[if (lp < n) ro[1L:lp] else ro]
+  }, hochberg = {
+    i <- lp:1L
+    o <- order(p, decreasing = TRUE)
+    ro <- order(o)
+    pmin(1, cummin((n + 1L - i) * p[o]))[ro]
+  }, BH = {
+    i <- lp:1L
+    o <- order(p, decreasing = TRUE)
+    ro <- order(o)
+    pmin(1, cummin(n/i * p[o]))[ro]
+  }, BY = {
+    i <- lp:1L
+    o <- order(p, decreasing = TRUE)
+    ro <- order(o)
+    q <- sum(1/(1L:n))
+    pmin(1, cummin(q * n/i * p[o]))[ro]
+  }, none = p)
+  p0
+}
+#
+
 # Running checks on variables ====
 glimpse(d[,1:38]) # appropriately convert variables 
   d$PTGENDER <- factor(d$PTGENDER)
   d$DX <- factor(d$DX)
   d$SITE <- factor(d$SITE)
-  d$PTRACCAT <- factor(d$PTRACCAT)
-  d$PTMARRY <- factor(d$PTMARRY)
   d$APOE4 <- factor(d$APOE4)
   d$SMOK <- factor(d$SMOK, levels = c(0,1))
   
@@ -588,12 +646,18 @@ hist(d$VSPULSE) # roughly normal
   CCL5$RAVLT <- lm(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL. ~ RAVLT.immediate + AGE + DX, na.action=na.exclude, data=d)
   CCL5$digit_score <- lm(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL. ~ DIGITSCOR + AGE + DX, na.action=na.exclude, data=d)
   
-  CCL5_results <- do.call(cbind, lapply(CCL5, function(z) 
-    summary(z)$coefficients[2,])) # aggregate model summaries  
+  CCL5_results <- t(do.call(cbind, lapply(CCL5, function(z) 
+    summary(z)$coefficients[2,]))) # aggregate model summaries  
   write.csv(CCL5_results, "CCL5_results.csv") # save 
-
+  
   lapply(CCL5, function(x)
     plot(x)) # show diagnostic plots for all proteins. Notes taken elsewhere 
+  
+  my.p.adj(CCL5_results[1:9,], "BH", n=meff(as.matrix(CCL5_results[,4]))) 
+  
+  p.adjust(CCL5_results[1:9,], "BH", n=meff(as.matrix(CCL5_results[,4])))
+  meff(CCL5_results[,1:9]) # 5.194087
+  # FDR done outside of R 
   
   # sqrt transformation
   CCL5sqrt <- list()
@@ -607,8 +671,8 @@ hist(d$VSPULSE) # roughly normal
   CCL5sqrt$RAVLT <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ RAVLT.immediate + AGE + DX, na.action=na.exclude, data=d)
   CCL5sqrt$digit_score <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ DIGITSCOR + AGE + DX, na.action=na.exclude, data=d)
     
-  CCL5sqrt_results <- do.call(cbind, lapply(CCL5sqrt, function(z)
-    summary(z)$coefficients[2,]))
+  CCL5sqrt_results <- t(do.call(cbind, lapply(CCL5sqrt, function(z)
+    summary(z)$coefficients[2,])))
   write.csv(CCL5sqrt_results, "CCL5sqrt_results.csv")
   
   
@@ -624,8 +688,8 @@ hist(d$VSPULSE) # roughly normal
   CLSTN3$RAVLT <- lm(CSTN3.ESLLLDTTSLQQR ~ RAVLT.immediate + AGE + DX, na.action=na.exclude, data=d)
   CLSTN3$digit_score <- lm(CSTN3.ESLLLDTTSLQQR ~ DIGITSCOR + AGE + DX, na.action=na.exclude, data=d)
     
-  CLSTN3_results <- do.call(cbind, lapply(CLSTN3, function(z) 
-    summary(z)$coefficients[2,]))
+  CLSTN3_results <- t(do.call(cbind, lapply(CLSTN3, function(z) 
+    summary(z)$coefficients[2,])))
   write.csv(CLSTN3_results, "CLSTN3_results.csv")
 
   lapply(CLSTN3, function(x)
@@ -644,8 +708,8 @@ hist(d$VSPULSE) # roughly normal
   NEGR1$RAVLT <- lm(NEGR1.SSIIFAGGDK ~ RAVLT.immediate + AGE + DX, na.action=na.exclude, data=d)
   NEGR1$digit_score <- lm(NEGR1.SSIIFAGGDK ~ DIGITSCOR + AGE + DX, na.action=na.exclude, data=d)
     
-  NEGR1_results <- do.call(cbind, lapply(NEGR1, function(z) 
-                            summary(z)$coefficients[2,]))
+  NEGR1_results <- t(do.call(cbind, lapply(NEGR1, function(z) 
+    summary(z)$coefficients[2,])))
   write.csv(NEGR1_results, "NEGR1_results.csv")
   
   lapply(NEGR1, function(x)
