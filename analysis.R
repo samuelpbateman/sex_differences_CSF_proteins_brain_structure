@@ -653,5 +653,36 @@ hist(d$VSPULSE) # roughly normal
     
 
 # Structural equation modelling ====
+# Smoking moderation of CLSTN3 on FGV
+  
+  
+# Smoking mediation of CLSTN3 on FGV 
+m1 <- ' 
+  Fusiform_corrected ~ c * CSTN3.ESLLLDTTSLQQR
+  SMOK ~ a * CSTN3.ESLLLDTTSLQQR
+	Fusiform_corrected ~ b * SMOK
+  ab := a * b
+  c prime := c + (a * b)
+  '
+fittedmodel <- sem(m1, data=d, test="bootstrap") # bootstrapped
+r <- parameterEstimates(fittedmodel) # CIs
+r$pvalue[8] # get p value for c
 
+  # plot 
+  d %>% ggplot(., aes(x = CSTN3.ESLLLDTTSLQQR, y = Fusiform_corrected, colour = SMOK)) +
+    geom_point(size = 4) + 
+    geom_smooth(method="lm") +
+    labs(colour = "Have Ever Smoked (y/n)",
+         x = "CLSTN3 Concentration",
+         y = "ICV-corrected Fusiform Gyrus Volume") + 
+    theme_classic()
+  # unsure if this is the clearest representation of the relationship 
+  
+  d %>% ggplot(., aes(x = , y = )) + 
+    geom_point() +
+    geom_smooth(method="lm") +
+    theme_classic()
     
+    
+    
+  
