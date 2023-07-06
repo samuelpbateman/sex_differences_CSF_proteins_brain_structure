@@ -7,7 +7,7 @@ library(skimr)
 library(psych)
 library(summarytools)
 
-# load csv 
+# load csv
 finalData <- read_csv("finaldata2.csv", na = c("", "NA", -4), ) # 439 vars, 818 obs
 # 
 
