@@ -559,7 +559,6 @@ d %>% select(DX, PTGENDER, ICV, Ventricles, Hippocampus, WholeBrain, Fusiform) %
   d2 <- d[!(d$...1 == 221), ]
 
   #### Protein descriptive stats ====
-    
   # CNTNP2: CNTP2.VDNAPDQQNSHPDLAQEEIR
   describeBy(d$CNTP2.VDNAPDQQNSHPDLAQEEIR, group = d$PTGENDER)
     hist(d$CNTP2.VDNAPDQQNSHPDLAQEEIR) # extreme values on low end 
@@ -672,6 +671,9 @@ hist(d$VSPULSE) # roughly normal
     summary(z)$coefficients[2,])))
   write.csv(CCL5sqrt_results, "CCL5sqrt_results.csv")
   
+  lapply(CCL5sqrt, function(x)
+    plot(x))
+  
   
 # CLSTN3 associations 
   CLSTN3 <- list()
@@ -717,10 +719,8 @@ hist(d$VSPULSE) # roughly normal
     
 
 # Structural equation modelling ====
-# Smoking moderation of CLSTN3 on FGV
-  
-  
-# Smoking mediation of CLSTN3 on FGV 
+library(rockchalk)
+# Smoking mediation of CLSTN3 on FGV
 m1 <- ' 
   Fusiform_corrected ~ c * CSTN3.ESLLLDTTSLQQR
   SMOK ~ a * CSTN3.ESLLLDTTSLQQR
@@ -746,7 +746,36 @@ r$pvalue[8] # get p value for c
     geom_point() +
     geom_smooth(method="lm") +
     theme_classic()
-    
-    
+  
+# Smoking mediation of CLSTN3 on FGV 
+  m1.5 <- lm(Fusiform_corrected ~ CSTN3.ESLLLDTTSLQQR * scale(SMOK), data=d)
+  summary(m1.5)
+
+  simpleSlopes <- plotSlopes(m1.5, plotx="CSTN3.ESLLLDTTSLQQR", modx="Smoking", modxVals="std.dev.")
+  testSlopes(simpleSlopes) # statistical test
+  
+
+# APOE4 mediation of CCL5 on BHV
+  m2 <- ' 
+  Hippocampus_corrected ~ c * sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.)
+  APOE4 ~ a * sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.)
+	Hippocampus_corrected ~ b * APOE4
+  ab := a * b
+  c prime := c + (a * b)
+  '
+  fittedmodel2 <- sem(m2, data=d, test="bootstrap") # bootstrapped
+  r2 <- parameterEstimates(fittedmodel2) # CIs
+  r2$pvalue[8] # get p value for c
+  
+  # plot 
+  d %>% ggplot(., aes(x = T.Cell.Specific.Protein.RANTES..RANTES...ng.mL., y = Hippocampus_corrected, colour = APOE4)) +
+    geom_point(size = 4) + 
+    geom_smooth(method="lm") +
+    labs(colour = "APOE4 Status",
+         x = "CCL5 Concentration",
+         y = "ICV-corrected Hippocampal Volume") + 
+    theme_classic()
+  
+# APOE4 moderation of CCL5 on BHV
     
   
