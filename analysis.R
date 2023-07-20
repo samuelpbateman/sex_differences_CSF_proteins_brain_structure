@@ -558,6 +558,32 @@ d %>% select(DX, PTGENDER, ICV, Ventricles, Hippocampus, WholeBrain, Fusiform) %
   # code for removing specific cases 
   d2 <- d[!(d$...1 == 221), ]
 
+  ### Sex-disaggregated analyses for phenotypes ====
+  # Do the 3 proteins of interest sig predict their respective phenotype in females
+  females <- subset(d, d$PTGENDER == "Female")
+  f_results <- list()
+  summary(lm(Hippocampus_corrected ~ T.Cell.Specific.Protein.RANTES..RANTES...ng.mL. + AGE + DX, na.action=na.exclude, data=females))$coefficients[2,]
+    # no sig effect of CCL5 on HV in females: 8.286e-05  6.577e-05   t = 1.260 p = 0.210739 
+  summary(lm(Fusiform_corrected ~ CSTN3.ESLLLDTTSLQQR + AGE + DX, na.action=na.exclude, data=females))$coefficients[2,]
+    # no sig effeect of CLSTN3 on FGV in females: -5.338e-05  1.396e-04  t = -0.382  p = 0.7031    
+  summary(lm(Fusiform_corrected ~ NEGR1.SSIIFAGGDK + AGE + DX, na.action=na.exclude, data=females))$coefficients[2,]
+    # no sig effect of NEGR1 on FGV in females: 1.585e-04  1.382e-04   t = 1.147 p = 0.2543   
+  
+  # Do the 3 proteins of interest sig predict their respective phenotypes in males
+  males <- subset(d, d$PTGENDER == "Male")
+  m <- list()
+  m$CCL5 <- lm(Hippocampus_corrected ~ T.Cell.Specific.Protein.RANTES..RANTES...ng.mL. + AGE + DX, na.action=na.exclude, data=males)
+    # sig effect of CCL5 on HV in males: -1.258e-04  5.617e-05  t = -2.240   p = 0.0267
+  m$CLSTN3 <- lm(Fusiform_corrected ~ CSTN3.ESLLLDTTSLQQR + AGE + DX, na.action=na.exclude, data=males)
+    # sig effect of CLSTN3 on FGV in males: 4.873e-04  1.049e-04   t = 4.647 p = 8.21e-06
+  m$NEGR1 <- lm(Fusiform_corrected ~ NEGR1.SSIIFAGGDK + AGE + DX, na.action=na.exclude, data=males)
+    # sig effect of NEGR1 on FGV in males: 6.785e-04  9.927e-05   t = 6.835 p = 2.93e-10
+  
+  m_results <- do.call(cbind, lapply(m, function(z) 
+    summary(z)$coefficients[2,]))
+  write.csv(m_results, "sex_disaggregated_results_males.csv") # save 
+  # 
+  
   #### Protein descriptive stats ====
   # CNTNP2: CNTP2.VDNAPDQQNSHPDLAQEEIR
   describeBy(d$CNTP2.VDNAPDQQNSHPDLAQEEIR, group = d$PTGENDER)
@@ -654,6 +680,7 @@ hist(d$VSPULSE) # roughly normal
   
   meff(CCL5_results[,1:9]) # 5.194087
   # 0.05 / 5.194087 = critical p < .0096
+  # correcting for anything > 2 would make observed p values non-significant as they are all > 0.025
   
   # sqrt transformation
   CCL5sqrt <- list()
@@ -718,13 +745,13 @@ hist(d$VSPULSE) # roughly normal
     plot(x)) # show diagnostic plots for all proteins. Notes taken elsewhere 
     
 
-# Structural equation modelling ====
+# Example structural equation modelling ====
 library(rockchalk)
-# Smoking mediation of CLSTN3 on FGV
+# Example of code used if SEM were to be performed
 m1 <- ' 
-  Fusiform_corrected ~ c * CSTN3.ESLLLDTTSLQQR
-  SMOK ~ a * CSTN3.ESLLLDTTSLQQR
-	Fusiform_corrected ~ b * SMOK
+  phenotype ~ c * protein
+  environmentalVar ~ a * protein
+	phenotype ~ b * environmentalVar
   ab := a * b
   c prime := c + (a * b)
   '
@@ -732,50 +759,11 @@ fittedmodel <- sem(m1, data=d, test="bootstrap") # bootstrapped
 r <- parameterEstimates(fittedmodel) # CIs
 r$pvalue[8] # get p value for c
 
-  # plot 
-  d %>% ggplot(., aes(x = CSTN3.ESLLLDTTSLQQR, y = Fusiform_corrected, colour = SMOK)) +
-    geom_point(size = 4) + 
-    geom_smooth(method="lm") +
-    labs(colour = "Have Ever Smoked (y/n)",
-         x = "CLSTN3 Concentration",
-         y = "ICV-corrected Fusiform Gyrus Volume") + 
-    theme_classic()
-  # unsure if this is the clearest representation of the relationship 
-  
-  d %>% ggplot(., aes(x = , y = )) + 
-    geom_point() +
-    geom_smooth(method="lm") +
-    theme_classic()
-  
-# Smoking mediation of CLSTN3 on FGV 
-  m1.5 <- lm(Fusiform_corrected ~ CSTN3.ESLLLDTTSLQQR * scale(SMOK), data=d)
+# Example of code used if mediation were to be performed 
+  m1.5 <- lm(phenotype ~ protein * scale(environmentalVar), data=d)
   summary(m1.5)
 
-  simpleSlopes <- plotSlopes(m1.5, plotx="CSTN3.ESLLLDTTSLQQR", modx="Smoking", modxVals="std.dev.")
+  simpleSlopes <- plotSlopes(m1.5, plotx="protein", modx="environmentalVar", modxVals="std.dev.")
   testSlopes(simpleSlopes) # statistical test
-  
-
-# APOE4 mediation of CCL5 on BHV
-  m2 <- ' 
-  Hippocampus_corrected ~ c * sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.)
-  APOE4 ~ a * sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.)
-	Hippocampus_corrected ~ b * APOE4
-  ab := a * b
-  c prime := c + (a * b)
-  '
-  fittedmodel2 <- sem(m2, data=d, test="bootstrap") # bootstrapped
-  r2 <- parameterEstimates(fittedmodel2) # CIs
-  r2$pvalue[8] # get p value for c
-  
-  # plot 
-  d %>% ggplot(., aes(x = T.Cell.Specific.Protein.RANTES..RANTES...ng.mL., y = Hippocampus_corrected, colour = APOE4)) +
-    geom_point(size = 4) + 
-    geom_smooth(method="lm") +
-    labs(colour = "APOE4 Status",
-         x = "CCL5 Concentration",
-         y = "ICV-corrected Hippocampal Volume") + 
-    theme_classic()
-  
-# APOE4 moderation of CCL5 on BHV
     
   
