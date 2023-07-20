@@ -56,16 +56,14 @@ library(summarytools) # for data inspection
 library(car) # for qqPlots and other stats
 library(ggsignif) # to add significance labels onto ggplots
 library(modelsummary) # 
-library(psych) # for stats
+library(psych) # for general stats
 library(GWASTools) # for qqPlots of p values 
-library(qvalue) # for estimaing q values
 library(lmtest) # for robust SEs
 library(sandwich) # for robust SEs
 library(lavaan) # library for SEM
 library(effectsize) # for effect sizes from models
   options(es.use_symbols = TRUE) # use mathematical symbols
 set.seed(1)
-
 
 # import data and create df for only complete cases ====
 d <- as.data.frame(read_csv('finaldata_winsorized.csv', na = c("NA", "", -4))) # 817 rows, 442 vars
@@ -74,66 +72,6 @@ d <- d %>% mutate(...1 = NULL, ...2 = NULL, ...4 = NULL) # 439 cols now
   # drop_na(d) %>% dim() # this significantly reduces sample size; 223 rows
 d_noNA_full <- drop_na(d) # 75 cases with full data (also removes MRI NAs)
 d_noNA <- d[complete.cases(d[,c(37:439)]),] # 99 cases with full protein data but not necessarily MRI
-
-# creating my own version of p.adjust to allow for meff() input ====
-my.p.adj <- function (p, method = p.adjust.methods, n = length(p)) 
-{
-  method <- match.arg(method)
-  if (method == "fdr") 
-    method <- "BH"
-  nm <- names(p)
-  p <- as.numeric(p)
-  p0 <- setNames(p, nm)
-  if (all(nna <- !is.na(p))) 
-    nna <- TRUE
-  else p <- p[nna]
-  lp <- length(p)
-  # stopifnot(n >= lp)
-  # if (n <= 1) 
-    # return(p0)
-  if (n == 2 && method == "hommel") 
-    method <- "hochberg"
-  p0[nna] <- switch(method, bonferroni = pmin(1, n * p), holm = {
-    i <- seq_len(lp)
-    o <- order(p)
-    ro <- order(o)
-    pmin(1, cummax((n + 1L - i) * p[o]))[ro]
-  }, hommel = {
-    if (n > lp) p <- c(p, rep.int(1, n - lp))
-    i <- seq_len(n)
-    o <- order(p)
-    p <- p[o]
-    ro <- order(o)
-    q <- pa <- rep.int(min(n * p/i), n)
-    for (j in (n - 1L):2L) {
-      ij <- seq_len(n - j + 1L)
-      i2 <- (n - j + 2L):n
-      q1 <- min(j * p[i2]/(2L:j))
-      q[ij] <- pmin(j * p[ij], q1)
-      q[i2] <- q[n - j + 1L]
-      pa <- pmax(pa, q)
-    }
-    pmax(pa, p)[if (lp < n) ro[1L:lp] else ro]
-  }, hochberg = {
-    i <- lp:1L
-    o <- order(p, decreasing = TRUE)
-    ro <- order(o)
-    pmin(1, cummin((n + 1L - i) * p[o]))[ro]
-  }, BH = {
-    i <- lp:1L
-    o <- order(p, decreasing = TRUE)
-    ro <- order(o)
-    pmin(1, cummin(n/i * p[o]))[ro]
-  }, BY = {
-    i <- lp:1L
-    o <- order(p, decreasing = TRUE)
-    ro <- order(o)
-    q <- sum(1/(1L:n))
-    pmin(1, cummin(q * n/i * p[o]))[ro]
-  }, none = p)
-  p0
-}
-#
 
 # Running checks on variables ====
 glimpse(d[,1:38]) # appropriately convert variables 
