@@ -620,6 +620,11 @@ hist(d$VSPULSE) # roughly normal
   # 0.05 / 5.194087 = critical p < .0096
   # correcting for anything > 2 would make observed p values non-significant as they are all > 0.025
   
+  hist(d$T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.)
+  qqPlot(d$T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.)
+  hist(sqrt(d$T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.))
+  qqPlot(sqrt(d$T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.))
+  
   # sqrt transformation
   CCL5sqrt <- list()
   CCL5sqrt$education <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ PTEDUCAT + AGE + DX, na.action=na.exclude, data=d)
