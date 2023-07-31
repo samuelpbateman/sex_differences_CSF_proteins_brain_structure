@@ -84,7 +84,25 @@ glimpse(d[,1:38]) # appropriately convert variables
 # Winsorise proteins at ±1.5SD
 d[37:439] <- DescTools::Winsorize(d[39:441], maxval=1.5, minval=-1.5, na.rm=F)
 
-dfSummary(d[,1:38]) # get summary statistics
+
+# Subsetting data for demographics table to reflect regression analyses with na.exclude() 
+dim(na.exclude(d)) # n = 223, 439 vars, less than the 286 from RQ1 analyses
+length(na.exclude(d$NEGR1.VVVNFAPTIQEIK)) # 286 
+dim(na.exclude(d[37:439])) # 286, good, this is used to create demographics table 
+na.exclude(d[37:439]) %>% select("RID":"ORIGPROT") %>% dfSummary()
+dfSummary(d[na.exclude(d[39:439])])
+
+d %>% select("RID", "A1AT.AVLTIDEK":"von.Willebrand.Factor..vWF...ug.mL.") %>% 
+  na.exclude() %>% dim() # 286 cases, good
+demTable <- d %>% select("RID", "A1AT.AVLTIDEK":"von.Willebrand.Factor..vWF...ug.mL.") %>% 
+  na.exclude() 
+d2 <- d[1:36]
+demTable2 <- merge(demTable, d2, by="RID", all=F)
+dim(demTable2) # 286 cases, 439 vars
+
+# get stats for demographics table
+dfSummary(demTable2[405:436])
+
 
 # check whether brain structures have 0s.
   d %>% filter(Ventricles < 1) %>% glimpse() # none
@@ -97,29 +115,27 @@ hist(d$SITE)
 
 
 # calculate brain phenotypes by diagnosis
-d %>% select(DX, ICV, Ventricles, Hippocampus, WholeBrain, Fusiform) %>% filter(DX == "Dementia") %>% dfSummary()
-d %>% select(DX, ICV, Ventricles, Hippocampus, WholeBrain, Fusiform) %>% filter(DX == "MCI") %>% dfSummary()
-d %>% select(DX, ICV, Ventricles, Hippocampus, WholeBrain, Fusiform) %>% filter(DX == "CN") %>% dfSummary()
+demTable2 %>% select(DX, ICV, WholeBrain, Ventricles, Hippocampus, Fusiform) %>% filter(DX == "Dementia") %>% dfSummary()
+demTable2 %>% select(DX, ICV, WholeBrain, Ventricles, Hippocampus, Fusiform) %>% filter(DX == "MCI") %>% dfSummary()
+demTable2 %>% select(DX, ICV, WholeBrain, Ventricles, Hippocampus, Fusiform) %>% filter(DX == "CN") %>% dfSummary()
 
 # calcualte brain phenotypes by sex
-d %>% select(DX, PTGENDER, ICV, Ventricles, Hippocampus, WholeBrain, Fusiform) %>% filter(PTGENDER == "Female") %>% dfSummary()
-d %>% select(DX, PTGENDER, ICV, Ventricles, Hippocampus, WholeBrain, Fusiform) %>% filter(PTGENDER == "Male") %>% dfSummary()
+demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fusiform) %>% filter(PTGENDER == "Female") %>% dfSummary()
+demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fusiform) %>% filter(PTGENDER == "Male") %>% dfSummary()
 
 # calcualte brain phenotypes by sex and diagnosis
-d %>% select(DX, PTGENDER, ICV, Ventricles, Hippocampus, WholeBrain, Fusiform) %>% 
+demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fusiform) %>% 
   filter(PTGENDER == "Male" & DX == "CN") %>% dfSummary()
-d %>% select(DX, PTGENDER, ICV, Ventricles, Hippocampus, WholeBrain, Fusiform) %>% 
+demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fusiform) %>% 
   filter(PTGENDER == "Male" & DX == "MCI") %>% dfSummary()
-d %>% select(DX, PTGENDER, ICV, Ventricles, Hippocampus, WholeBrain, Fusiform) %>% 
+demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fusiform) %>% 
   filter(PTGENDER == "Male" & DX == "Dementia") %>% dfSummary()
-d %>% select(DX, PTGENDER, ICV, Ventricles, Hippocampus, WholeBrain, Fusiform) %>% 
+demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fusiform) %>% 
   filter(PTGENDER == "Female" & DX == "CN") %>% dfSummary()
-d %>% select(DX, PTGENDER, ICV, Ventricles, Hippocampus, WholeBrain, Fusiform) %>% 
+demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fusiform) %>% 
   filter(PTGENDER == "Female" & DX == "MCI") %>% dfSummary()
-d %>% select(DX, PTGENDER, ICV, Ventricles, Hippocampus, WholeBrain, Fusiform) %>% 
+demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fusiform) %>% 
   filter(PTGENDER == "Female" & DX == "Dementia") %>% dfSummary()
-
-
 
 
 # Sex difference in brain phenotypes and proteins ==== 
@@ -149,6 +165,8 @@ d %>% select(DX, PTGENDER, ICV, Ventricles, Hippocampus, WholeBrain, Fusiform) %
     # make qqplot of p values
     par(mfrow=c(2,2))
     GWASTools::qqPlot(BV_proteins_table[,4], ci = T, main = "Total Brain") # underinflation present
+    
+    # nobs(model) = 283 included cases in example model
     
     # calculate robust standard errors for model coefficients
       # create new list of regression outputs (no rounded summary)
