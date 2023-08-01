@@ -627,16 +627,14 @@ hist(d$VSPULSE) # roughly normal
   CCL5$RAVLT <- lm(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL. ~ RAVLT.immediate + AGE + DX, na.action=na.exclude, data=d)
   CCL5$digit_score <- lm(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL. ~ DIGITSCOR + AGE + DX, na.action=na.exclude, data=d)
   
-  CCL5_results <- do.call(cbind, lapply(CCL5, function(z) 
-    summary(z)$coefficients[2,])) # aggregate model summaries  
+  CCL5_results <- data.frame(t(do.call(cbind, lapply(CCL5, function(z) 
+    summary(z)$coefficients[2,])))) # aggregate model summaries  
+  # FDR adjustment
+  CCL5_results <- CCL5_results %>% mutate(p_adj = p.adjust(as.numeric(CCL5_results[,4]),"BH"))
   write.csv(CCL5_results, "CCL5_results.csv") # save 
   
   lapply(CCL5, function(x)
     plot(x)) # show diagnostic plots for all proteins. Notes taken elsewhere 
-  
-  meff(CCL5_results[,1:9]) # 5.194087
-  # 0.05 / 5.194087 = critical p < .0096
-  # correcting for anything > 2 would make observed p values non-significant as they are all > 0.025
   
   hist(d$T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.)
   qqPlot(d$T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.)
@@ -655,8 +653,10 @@ hist(d$VSPULSE) # roughly normal
   CCL5sqrt$RAVLT <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ RAVLT.immediate + AGE + DX, na.action=na.exclude, data=d)
   CCL5sqrt$digit_score <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ DIGITSCOR + AGE + DX, na.action=na.exclude, data=d)
     
-  CCL5sqrt_results <- t(do.call(cbind, lapply(CCL5sqrt, function(z)
-    summary(z)$coefficients[2,])))
+  CCL5sqrt_results <- data.frame(t(do.call(cbind, lapply(CCL5sqrt, function(z)
+    summary(z)$coefficients[2,]))))
+  # FDR adjustment
+  CCL5sqrt_results <- CCL5sqrt_results %>% mutate(p_adj = p.adjust(as.numeric(CCL5sqrt_results[,4]),"BH"))
   write.csv(CCL5sqrt_results, "CCL5sqrt_results.csv")
   
   lapply(CCL5sqrt, function(x)
@@ -675,9 +675,12 @@ hist(d$VSPULSE) # roughly normal
   CLSTN3$RAVLT <- lm(CSTN3.ESLLLDTTSLQQR ~ RAVLT.immediate + AGE + DX, na.action=na.exclude, data=d)
   CLSTN3$digit_score <- lm(CSTN3.ESLLLDTTSLQQR ~ DIGITSCOR + AGE + DX, na.action=na.exclude, data=d)
     
-  CLSTN3_results <- do.call(cbind, lapply(CLSTN3, function(z) 
-    summary(z)$coefficients[2,]))
+  CLSTN3_results <- data.frame(t(do.call(cbind, lapply(CLSTN3, function(z) 
+    summary(z)$coefficients[2,]))))
+  # FDR adjustment
+  CLSTN3_results <- CLSTN3_results %>% mutate(p_adj = p.adjust(as.numeric(CLSTN3_results[,4]),"BH"))
   write.csv(CLSTN3_results, "CLSTN3_results.csv")
+  
 
   lapply(CLSTN3, function(x)
     plot(x)) # show diagnostic plots for all proteins. Notes taken elsewhere 
@@ -698,14 +701,18 @@ hist(d$VSPULSE) # roughly normal
   NEGR1$RAVLT <- lm(NEGR1.SSIIFAGGDK ~ RAVLT.immediate + AGE + DX, na.action=na.exclude, data=d)
   NEGR1$digit_score <- lm(NEGR1.SSIIFAGGDK ~ DIGITSCOR + AGE + DX, na.action=na.exclude, data=d)
     
-  NEGR1_results <- t(do.call(cbind, lapply(NEGR1, function(z) 
-    summary(z)$coefficients[2,])))
+  # bind results
+  NEGR1_results <- data.frame(t(do.call(cbind, lapply(NEGR1, function(z) 
+    summary(z)$coefficients[2,]))))
+  # FDR adjustment
+  NEGR1_results <- NEGR1_results %>% mutate(p_adj = p.adjust(as.numeric(NEGR1_results[,4]),"BH"))
+  # write csv
   write.csv(NEGR1_results, "NEGR1_results.csv")
   
   lapply(NEGR1, function(x)
-    plot(x)) # show diagnostic plots for all proteins. Notes taken elsewhere 
-    
-
+    plot(x)) # show diagnostic plots for all proteins. Notes taken elsewhere
+  
+  
 # Example structural equation modelling ====
 # Example of code used if SEM were to be performed
 m1 <- ' 
