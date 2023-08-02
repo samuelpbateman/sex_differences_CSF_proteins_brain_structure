@@ -7,55 +7,13 @@ BiocManager::install("qvalue")
 # install sva of BiocManager 
 BiocManager::install("sva")
 
-# install meff for multiple testing corrections ====
-meff = function(x, eigen = FALSE, correl = FALSE) {
-  # if the input x is eigenvalues
-  if(eigen) {
-    if(!class(x) %in% c("numeric", "integer")) {
-      stop("Eigenvalues are not numeric or integer.")
-    }
-    k = length(x)
-    evs = x
-    # if the input x is a correlation matrix       
-  } else if(correl) {
-    # number of variables
-    k = ncol(x)
-    # dimension checks
-    if(!isSymmetric(x)) {
-      stop("Correlation matrix is not symmetric.")
-    } 
-    # convert the correlation matrix to positive-definite
-    require(Matrix)
-    x = as.matrix(nearPD(x)$mat)
-    # get eigenvalues and absolute eigenvalues of correlation matrix
-    evs = eigen(x)$values
-    # otherwise the input x is assumed to be a dataframe with variables in columns and observations in rows
-  } else {
-    # number of variables
-    k = ncol(x)
-    # get correlation matrix
-    x = cor(x, use = "pairwise.complete.obs")
-    # convert the correlation matrix to positive-definite.
-    require(Matrix)
-    x = as.matrix(nearPD(x)$mat)
-    # get eigenvalues and absolute eigenvalues of R matrix
-    evs = eigen(x)$values
-  }
-  # effective number of tests (Nyholt, 2004)
-  eff = 1 + (k - 1) * (1 - var(evs) / k)
-  return(eff)
-}
-meff(d[37:439])
-  # 320.6846 for 3SD winsorisation
-  # 320.3376 for 1.5SD winsorisation
-
 # load packages and set seed ====
 library(skimr) # for data inspection
 library(tidyverse) # optional; ease of life 
 library(summarytools) # for data inspection 
 library(car) # for qqPlots and other stats
 library(ggsignif) # to add significance labels onto ggplots
-library(modelsummary) # 
+library(modelsummary) # data inspection for demographic table 
 library(psych) # for general stats
 library(GWASTools) # for qqPlots of p values 
 library(lmtest) # for robust SEs
@@ -102,6 +60,10 @@ dim(demTable2) # 286 cases, 439 vars
 
 # get stats for demographics table
 dfSummary(demTable2[405:436])
+demTable2_f <- demTable2 %>% filter(PTGENDER == "Female")
+dfSummary(demTable2_f[405:436]) # females only
+demTable2_m <- demTable2 %>% filter(PTGENDER == "Male")
+dfSummary() # males only
 
 
 # check whether brain structures have 0s.
