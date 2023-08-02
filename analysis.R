@@ -21,7 +21,7 @@ library(sandwich) # for robust SEs
 library(lavaan) # library for SEM
 library(effectsize) # for effect sizes from models
   options(es.use_symbols = TRUE) # use mathematical symbols
-set.seed(1)
+set.seed(1) # for qqplots of p values
 
 # import data and create df for only complete cases ====
 d <- as.data.frame(read_csv('finaldata_winsorized.csv', na = c("NA", "", -4))) # 817 rows, 442 vars
@@ -44,12 +44,6 @@ d[37:439] <- DescTools::Winsorize(d[39:441], maxval=1.5, minval=-1.5, na.rm=F)
 
 
 # Subsetting data for demographics table to reflect regression analyses with na.exclude() 
-dim(na.exclude(d)) # n = 223, 439 vars, less than the 286 from RQ1 analyses
-length(na.exclude(d$NEGR1.VVVNFAPTIQEIK)) # 286 
-dim(na.exclude(d[37:439])) # 286, good, this is used to create demographics table 
-na.exclude(d[37:439]) %>% select("RID":"ORIGPROT") %>% dfSummary()
-dfSummary(d[na.exclude(d[39:439])])
-
 d %>% select("RID", "A1AT.AVLTIDEK":"von.Willebrand.Factor..vWF...ug.mL.") %>% 
   na.exclude() %>% dim() # 286 cases, good
 demTable <- d %>% select("RID", "A1AT.AVLTIDEK":"von.Willebrand.Factor..vWF...ug.mL.") %>% 
@@ -63,7 +57,7 @@ dfSummary(demTable2[405:436])
 demTable2_f <- demTable2 %>% filter(PTGENDER == "Female")
 dfSummary(demTable2_f[405:436]) # females only
 demTable2_m <- demTable2 %>% filter(PTGENDER == "Male")
-dfSummary() # males only
+dfSummary(demTable2_m[405:436]) # males only
 
 
 # check whether brain structures have 0s.
@@ -572,13 +566,9 @@ hist(d$VSPULSE) # roughly normal
   # FDR adjustment
   CLSTN3_results <- CLSTN3_results %>% mutate(p_adj = p.adjust(as.numeric(CLSTN3_results[,4]),"BH"))
   write.csv(CLSTN3_results, "CLSTN3_results.csv")
-  
 
   lapply(CLSTN3, function(x)
     plot(x)) # show diagnostic plots for all proteins. Notes taken elsewhere 
-  
-  meff(CLSTN3_results[,1:9]) # 3.932619
-  # 0.05 / 3.932619 = critical p < 0.013
   
   
 # NEGR1 associations
