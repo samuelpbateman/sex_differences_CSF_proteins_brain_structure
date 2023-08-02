@@ -144,29 +144,15 @@ demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fus
     BV_proteins <- lapply(d[37:439], function(p) 
       round(summary(lm(WholeBrain_corrected ~ p * PTGENDER + AGE + DX, na.action=na.exclude, data=d))$coefficients[7,], 7))
     # convert output to a table
-    BV_proteins_table <- do.call(rbind, BV_proteins) 
+    BV_proteins_table <- as.data.frame(do.call(rbind, BV_proteins))
+    # FDR correction
+    BV_proteins_table <- BV_proteins_table %>% 
+      mutate(p_adj = p.adjust(as.numeric(BV_proteins_table[,4]),"BH"))
     write.csv(BV_proteins_table, "BV_proteins_table.csv", row.names = T) # all vars
-    # subset where p < .05
-      BV_proteins_df <- as.data.frame(BV_proteins_table) # convert to df
-      (BV_proteins_sig <- BV_proteins_df %>% filter(.[,4] < 0.05)) # 
-    # subset where p < FDR correction
-      BV_proteins_fdr <- p.adjust(BV_proteins_table[,4], "fdr", n=length(BV_proteins_table[,4]))
-      BV_proteins_fdr <- p.adjust(BV_proteins_table[,4], "fdr", n=320.6846)
-      
-      BV_proteins_fdr_df <- as.data.frame(BV_proteins_fdr) # convert to df
-      (BV_proteins_fdr_sig <- BV_proteins_fdr_df %>% filter(BV_proteins_fdr < 0.05)) # 
-    # subset where p < Bonferroni correction
-      BV_proteins_bon <- p.adjust(BV_proteins_table[,4], "bonferroni", n=length(BV_proteins_table[,4])) # all are 1?? 
-      BV_proteins_bon_df <- as.data.frame(BV_proteins_bon) # convert to df
-      (BV_proteins_bon_sig <- BV_proteins_bon_df %>% filter(BV_proteins_bon < 0.05)) #
-      # manual calcualtion to check
-        BV_proteins_bon_sig_manual <- BV_proteins_df %>% filter(.[,4] < 0.00012) # 
-        BV_proteins_bon_sig_manual <- BV_proteins_df %>% filter(.[,4] < (0.05/320.6846)) # 
     # make qqplot of p values
     par(mfrow=c(2,2))
     GWASTools::qqPlot(BV_proteins_table[,4], ci = T, main = "Total Brain") # underinflation present
-    
-    # nobs(model) = 283 included cases in example model
+    # note for generating new demographic table database: nobs(model) = 283 included cases in example model
     
     # calculate robust standard errors for model coefficients
       # create new list of regression outputs (no rounded summary)
@@ -178,44 +164,25 @@ demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fus
       # extract only interaction coefficients
       BV_proteins_robustSE_int_coef <- lapply(BV_proteins_robustSE, function(x) 
         x[grepl("p:PTGENDER", rownames(x)),]) # extract only interaction terms
-      BV_proteins_robustSE_int_coef_table <- do.call(rbind, BV_proteins_robustSE_int_coef) # convert to table
-      BV_proteins_robustSE_int_coef_df <- as.data.frame(BV_proteins_robustSE_int_coef_table) # convert to df
-      write.csv(BV_proteins_robustSE_int_coef_table, "BV_proteins_table_rSE_1.5.csv", row.names = T) # all vars
+      BV_proteins_robustSE_int_coef_df <- as.data.frame(do.call(rbind, BV_proteins_robustSE_int_coef)) # convert to table and df
+      # FDR correction
+      BV_proteins_rSE_finidngs <- BV_proteins_robustSE_int_coef_df %>% 
+        mutate(p_adj = p.adjust(as.numeric(BV_proteins_robustSE_int_coef_df[,4], "BH")))
+      write.csv(BV_proteins_rSE_finidngs, "BV_proteins_table_rSE.csv", row.names = T) # all vars
       # make qqplot of robust SE p values
       GWASTools::qqPlot(BV_proteins_robustSE_int_coef_table[,4], ci = T, main = "Total Brain Robust SE")
-      # Bonferroni correction
-        View(BV_proteins_robustSE_int_coef_df[order(BV_proteins_robustSE_int_coef_df[,4]), ])
-      # FDR correction
-        BV_proteins_fdr_rSE <- p.adjust(BV_proteins_robustSE_int_coef_table[,4], "fdr", 
-                                        n=length(BV_proteins_robustSE_int_coef_table[,4]))
-        BV_proteins_fdr_rSE_df <- as.data.frame(BV_proteins_fdr_rSE) # convert to df
-        (BV_proteins_fdr_rSe_sig <- BV_proteins_fdr_rSE_df %>% filter(BV_proteins_fdr_rSE_df < 0.05))
-        # checking automated results are same as manual
-          m1 <- lm(WholeBrain_corrected ~ A1AT.AVLTIDEK * PTGENDER + AGE + DX, na.action=na.exclude, data=d)
-          summary(m1)
-          coeftest(m1, vcov = vcovHC(m1, type = "HC0")) # success 
         
       
   ## Ventricles ==== 
     VE_proteins <- lapply(d[37:439], function(p) 
       round(summary(lm(Ventricles_corrected ~ p * PTGENDER + AGE + DX, na.action=na.exclude, data=d))$coefficients[7,], 7))
     # convert output to a table
-    VE_proteins_table <- do.call(rbind, VE_proteins) 
+    VE_proteins_table <- as.data.frame(do.call(rbind, VE_proteins))
+    # FDR correction
+    VE_proteins_table <- VE_proteins_table %>% 
+      mutate(p_adj = p.adjust(as.numeric(VE_proteins_table[,4]),"BH"))
+    # write CSV
     write.csv(VE_proteins_table, "VE_proteins_table.csv", row.names = T) # all vars
-      # subset where p < .05
-        VE_proteins_df <- as.data.frame(VE_proteins_table) # convert to df
-        (VE_proteins_sig <- VE_proteins_df %>% filter(.[,4] < 0.05))
-      # subset where p < FDR correction
-        VE_proteins_fdr <- p.adjust(VE_proteins_table[,4], "fdr", n=length(VE_proteins_table[,4]))
-        VE_proteins_fdr_df <- as.data.frame(VE_proteins_fdr) # convert to df
-        (VE_proteins_fdr_sig <- VE_proteins_fdr_df %>% filter(VE_proteins_fdr < 0.05)) 
-      # subset where p < Bonferroni correction
-        VE_proteins_bon <- p.adjust(VE_proteins_table[,4], "bonferroni", n=length(VE_proteins_table[,4]))
-        VE_proteins_bon_df <- as.data.frame(VE_proteins_bon) # convert to df
-        (VE_proteins_bon_sig <- VE_proteins_bon_df %>% filter(VE_proteins_bon < 0.05))
-        # manual calcualtion to check
-          VE_proteins_bon_sig_manual <- VE_proteins_df %>% filter(.[,4] < 0.00012)
-        # SCG1.HLEEPGETQNAFLNER nearing significance at FDR level. No BF significances. 
     # make qqplot of p values
     GWASTools::qqPlot(VE_proteins_table[,4], ci = T, main = "Ventricles")
     
@@ -229,41 +196,24 @@ demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fus
       # extract only interaction coefficients
       VE_proteins_robustSE_int_coef <- lapply(VE_proteins_robustSE, function(x) 
         x[grepl("p:PTGENDER", rownames(x)),]) # extract only interaction terms
-      VE_proteins_robustSE_int_coef_table <- do.call(rbind, VE_proteins_robustSE_int_coef) # convert to table
-      VE_proteins_robustSE_int_coef_df <- as.data.frame(VE_proteins_robustSE_int_coef_table) # convert to df
-      write.csv(VE_proteins_robustSE_int_coef_df, "VE_proteins_table_rSE_1.5.csv", row.names = T) # all vars
-      # make qqplot of robust SE p values
-      GWASTools::qqPlot(VE_proteins_robustSE_int_coef_table[,4], ci = T, main = "Ventricles Robust SE")
-        # Bonferroni correction
-        View(VE_proteins_robustSE_int_coef_df[order(VE_proteins_robustSE_int_coef_df[,4]), ])
-        # FDR correction
-        VE_proteins_fdr_rSE <- p.adjust(VE_proteins_robustSE_int_coef_table[,4], "fdr", 
-                                        n=length(VE_proteins_robustSE_int_coef_table[,4]))
-        VE_proteins_fdr_rSE_df <- as.data.frame(VE_proteins_fdr_rSE) # convert to df
-        (VE_proteins_fdr_rSE_sig <- VE_proteins_fdr_rSE_df %>% filter(VE_proteins_fdr_rSE_df < 0.05))
-        # Insulin.like.Growth.Factor.Binding.Prote..ng.mL. is v close to significance at FDR level
+      VE_proteins_robustSE_int_coef_df <- as.data.frame(do.call(rbind, VE_proteins_robustSE_int_coef)) # convert to df
+      # FDR correction
+      VE_proteins_rSE_findings <- VE_proteins_robustSE_int_coef_df %>% 
+        mutate(p_adj = p.adjust(as.numeric(VE_proteins_robustSE_int_coef_df[,4], "BH")))
+      # write CSV
+      write.csv(VE_proteins_rSE_findings, "VE_proteins_table_rSE.csv", row.names = T) # all vars
 
           
   ## Hippocampus ==== 
     HI_proteins <- lapply(d[37:439], function(p) 
       round(summary(lm(Hippocampus_corrected ~ p * PTGENDER + AGE + DX, na.action=na.exclude, data=d))$coefficients[7,], 7))
-    # convert output to a table
-    HI_proteins_table <- do.call(rbind, HI_proteins) 
+    # convert output to a df
+    HI_proteins_table <- as.data.frame(do.call(rbind, HI_proteins))
+    # FDR correction
+    HI_proteins_table <- HI_proteins_table %>% 
+      mutate(p_adj = p.adjust(as.numeric(HI_proteins_table[,4]),"BH"))
+    # write CSV
     write.csv(HI_proteins_table, "HI_proteins_table.csv", row.names = T) # all vars
-      # subset where p < .05
-        HI_proteins_df <- as.data.frame(HI_proteins_table) # convert to df
-        (HI_proteins_sig <- HI_proteins_df %>% filter(.[,4] < 0.05))
-      # subset where p < FDR correction
-        HI_proteins_fdr <- p.adjust(HI_proteins_table[,4], "fdr", n=length(HI_proteins_table[,4]))
-        HI_proteins_fdr_df <- as.data.frame(HI_proteins_fdr) # convert to df
-        (HI_proteins_fdr_sig <- HI_proteins_fdr_df %>% filter(HI_proteins_fdr < 0.05)) 
-      # subset where p < Bonferroni correction
-        HI_proteins_bon <- p.adjust(HI_proteins_table[,4], "bonferroni", n=length(HI_proteins_table[,4]))
-        HI_proteins_bon_df <- as.data.frame(HI_proteins_bon) # convert to df
-        (HI_proteins_bon_sig <- HI_proteins_bon_df %>% filter(HI_proteins_bon < 0.05))
-        # manual calcualtion to check
-          HI_proteins_bon_sig_manual <- HI_proteins_df %>% filter(.[,4] < 0.00012)
-          # none sig at BF or FDR level
     # make qqplot of p values
     GWASTools::qqPlot(HI_proteins_table[,4], ci = T, main = "Hippocampus")
     
@@ -277,41 +227,26 @@ demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fus
       # extract only interaction coefficients
       HI_proteins_robustSE_int_coef <- lapply(HI_proteins_robustSE, function(x) 
         x[grepl("p:PTGENDER", rownames(x)),]) # extract only interaction terms
-      HI_proteins_robustSE_int_coef_table <- do.call(rbind, HI_proteins_robustSE_int_coef) # convert to table
-      HI_proteins_robustSE_int_coef_df <- as.data.frame(HI_proteins_robustSE_int_coef_table) # convert to df 
-      write.csv(HI_proteins_robustSE_int_coef_df, "HI_proteins_table_rSE_1.5.csv", row.names = T) # all vars
+      HI_proteins_robustSE_int_coef_df <- as.data.frame(do.call(rbind, HI_proteins_robustSE_int_coef)) # convert to df
+      # FDR correction
+      HI_proteins_rSE_findings <- HI_proteins_robustSE_int_coef_df %>% 
+        mutate(p_adj = p.adjust(as.numeric(HI_proteins_robustSE_int_coef_df[,4], "BH")))
+      # write CSV
+      write.csv(HI_proteins_rSE_findings, "HI_proteins_table_rSE.csv", row.names = T) # all vars
       # make qqplot of robust SE p values
       GWASTools::qqPlot(HI_proteins_robustSE_int_coef_table[,4], ci = T, main = "Hippocampus Robust SE")
-        # Bonferroni correction
-        View(HI_proteins_robustSE_int_coef_df[order(HI_proteins_robustSE_int_coef_df[,4]), ])
-          # none sig but ENOG.LGAEVYHTLK nearly 
-        # FDR correction
-        HI_proteins_fdr_rSE <- p.adjust(HI_proteins_robustSE_int_coef_table[,4], "fdr", 
-                                        n=length(HI_proteins_robustSE_int_coef_table[,4]))
-        HI_proteins_fdr_rSE_df <- as.data.frame(HI_proteins_fdr_rSE) # convert to df
-        (HI_proteins_fdr_rSE_sig <- HI_proteins_fdr_rSE_df %>% filter(HI_proteins_fdr_rSE_df < 0.05))
-        # T.Cell.Specific.Protein.RANTES..RANTES...ng.mL. sig at FDR level 
     
     
   ## Fusiform Gyrus ====
     FG_proteins <- lapply(d[37:439], function(p) 
       round(summary(lm(Fusiform_corrected ~ p * PTGENDER + AGE + DX, na.action=na.exclude, data=d))$coefficients[7,], 7))
-    # convert output to a table
-    FG_proteins_table <- do.call(rbind, FG_proteins) 
+    # convert output to df
+    FG_proteins_table <- data.frame(do.call(rbind, FG_proteins))
+    # FDR correction
+    FG_proteins_table <- FG_proteins_table %>% 
+      mutate(p_adj = p.adjust(as.numeric(FG_proteins_table[,4]),"BH"))
+    # write CSV
     write.csv(FG_proteins_table, "FG_proteins_table.csv", row.names = T) # all vars
-      # subset where p < .05
-        FG_proteins_df <- as.data.frame(FG_proteins_table) # convert to df
-        (FG_proteins_sig <- FG_proteins_df %>% filter(.[,4] < 0.05)) 
-      # subset where p < FDR correction
-        FG_proteins_fdr <- p.adjust(FG_proteins_table[,4], "fdr", n=length(FG_proteins_table[,4]))
-        FG_proteins_fdr_df <- as.data.frame(FG_proteins_fdr) # convert to df
-        (FG_proteins_fdr_sig <- FG_proteins_fdr_df %>% filter(FG_proteins_fdr < 0.05)) 
-      # subset where p < Bonferroni correction
-        FG_proteins_bon <- p.adjust(FG_proteins_table[,4], "bonferroni", n=length(FG_proteins_table[,4]))
-        FG_proteins_bon_df <- as.data.frame(FG_proteins_bon) # convert to df
-        (FG_proteins_bon_sig <- FG_proteins_bon_df %>% filter(FG_proteins_bon < 0.05)) 
-        # manual calcualtion to check
-          FG_proteins_bon_sig_manual <- FG_proteins_df %>% filter(.[,4] < 0.00012) 
     # make qqplot of log10-p values
     GWASTools::qqPlot(FG_proteins_table[,4], ci = T, main = "Fusiform Gyrus")
     
@@ -325,19 +260,14 @@ demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fus
       # extract only interaction coefficients
       FG_proteins_robustSE_int_coef <- lapply(FG_proteins_robustSE, function(x) 
         x[grepl("p:PTGENDER", rownames(x)),]) # extract only interaction terms
-      FG_proteins_robustSE_int_coef_table <- do.call(rbind, FG_proteins_robustSE_int_coef) # convert to table
-      FG_proteins_robustSE_int_coef_df <- as.data.frame(FG_proteins_robustSE_int_coef_table) # convert to df
-      write.csv(FG_proteins_robustSE_int_coef_df, "FG_proteins_table_rSE_1.5.csv", row.names = T) # all vars
+      FG_proteins_robustSE_int_coef_df <- as.data.frame(do.call(rbind, FG_proteins_robustSE_int_coef)) # convert to df
+      # FDR correction
+      FG_proteins_rSE_findings <- FG_proteins_robustSE_int_coef_df %>% 
+        mutate(p_adj = p.adjust(as.numeric(FG_proteins_robustSE_int_coef_df[,4], "BH")))
+      # write CSV
+      write.csv(FG_proteins_rSE_findings, "FG_proteins_table_rSE.csv", row.names = T) # all vars
       # make qqplot of robust SE p values
       GWASTools::qqPlot(FG_proteins_robustSE_int_coef_table[,4], ci = T, main = "Fusiform Gyrus Robust SE")
-        # Bonferroni correction 
-        View(FG_proteins_robustSE_int_coef_df[order(FG_proteins_robustSE_int_coef_df[,4]), ])
-          # ENOG.LGAEVYHTLK and SCG1.HLEEPGETQNAFLNER are significant 
-        # FDR correction
-        FG_proteins_fdr_rSE <- p.adjust(FG_proteins_robustSE_int_coef_table[,4], "fdr", 
-                                        n=length(FG_proteins_robustSE_int_coef_table[,4]))
-        FG_proteins_fdr_rSE_df <- as.data.frame(FG_proteins_fdr_rSE) # convert to df
-        (FG_proteins_fdr_rSE_sig <- FG_proteins_fdr_rSE_df %>% filter(FG_proteins_fdr_rSE_df < 0.05))
 
           
   ### Regression diagnostics for 5 sig proteins ====
@@ -711,6 +641,129 @@ hist(d$VSPULSE) # roughly normal
   
   lapply(NEGR1, function(x)
     plot(x)) # show diagnostic plots for all proteins. Notes taken elsewhere
+  
+  
+## Environment/Clinical associations with proteins sex-disaggregated =====
+females <- subset(d, d$PTGENDER == "Female")
+males <- subset(d, d$PTGENDER == "Male")
+  
+# CCL5 sqrt transformed
+  # females
+  f_CCL5 <- list()
+    f_CCL5$education <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ PTEDUCAT + AGE + DX, na.action=na.exclude, data=females)
+    f_CCL5$APOE4 <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ APOE4 + AGE + DX, na.action=na.exclude, data=females)
+    f_CCL5$BMI <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ BMI + AGE + DX, na.action=na.exclude, data=females)
+    f_CCL5$smoking <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ SMOK + AGE + DX, na.action=na.exclude, data=females)
+    f_CCL5$pulse <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ VSPULSE + AGE + DX, na.action=na.exclude, data=females)
+    f_CCL5$diastolic_bp <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ VSBPDIA + AGE + DX, na.action=na.exclude, data=females)
+    f_CCL5$systolic_bp <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ VSBPSYS + AGE + DX, na.action=na.exclude, data=females)
+    f_CCL5$RAVLT <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ RAVLT.immediate + AGE + DX, na.action=na.exclude, data=females)
+    f_CCL5$digit_score <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ DIGITSCOR + AGE + DX, na.action=na.exclude, data=females)
+  # bind results
+  f_CCL5_results <- data.frame(t(do.call(cbind, lapply(f_CCL5, function(z)
+    summary(z)$coefficients[2,]))))
+  # FDR adjustment
+  f_CCL5_results <- f_CCL5_results %>% mutate(p_adj = p.adjust(as.numeric(f_CCL5_results[,4]),"BH"))
+  # Write CSV
+  write.csv(f_CCL5_results, "f_CCL5_results.csv")
+  
+  # males
+  m_CCL5 <- list()
+    m_CCL5$education <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ PTEDUCAT + AGE + DX, na.action=na.exclude, data=males)
+    m_CCL5$APOE4 <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ APOE4 + AGE + DX, na.action=na.exclude, data=males)
+    m_CCL5$BMI <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ BMI + AGE + DX, na.action=na.exclude, data=males)
+    m_CCL5$smoking <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ SMOK + AGE + DX, na.action=na.exclude, data=males)
+    m_CCL5$pulse <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ VSPULSE + AGE + DX, na.action=na.exclude, data=males)
+    m_CCL5$diastolic_bp <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ VSBPDIA + AGE + DX, na.action=na.exclude, data=males)
+    m_CCL5$systolic_bp <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ VSBPSYS + AGE + DX, na.action=na.exclude, data=males)
+    m_CCL5$RAVLT <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ RAVLT.immediate + AGE + DX, na.action=na.exclude, data=males)
+    m_CCL5$digit_score <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ DIGITSCOR + AGE + DX, na.action=na.exclude, data=males)
+  # bind results
+  m_CCL5_results <- data.frame(t(do.call(cbind, lapply(m_CCL5, function(z)
+    summary(z)$coefficients[2,]))))
+  # FDR adjustment
+  m_CCL5_results <- m_CCL5_results %>% mutate(p_adj = p.adjust(as.numeric(m_CCL5_results[,4]),"BH"))
+  # Write CSV
+  write.csv(m_CCL5_results, "m_CCL5_results.csv")
+    
+# CLSTN3
+  # females
+  f_CLSTN3 <- list()
+    f_CLSTN3$education <- lm(CSTN3.ESLLLDTTSLQQR ~ PTEDUCAT + AGE + DX, na.action=na.exclude, data=females)
+    f_CLSTN3$APOE4 <- lm(CSTN3.ESLLLDTTSLQQR ~ APOE4 + AGE + DX, na.action=na.exclude, data=females)
+    f_CLSTN3$BMI <- lm(CSTN3.ESLLLDTTSLQQR ~ BMI + AGE + DX, na.action=na.exclude, data=females)
+    f_CLSTN3$smoking <- lm(CSTN3.ESLLLDTTSLQQR ~ SMOK + AGE + DX, na.action=na.exclude, data=females)
+    f_CLSTN3$pulse <- lm(CSTN3.ESLLLDTTSLQQR ~ VSPULSE + AGE + DX, na.action=na.exclude, data=females)
+    f_CLSTN3$diastolic_bp <- lm(CSTN3.ESLLLDTTSLQQR ~ VSBPDIA + AGE + DX, na.action=na.exclude, data=females)
+    f_CLSTN3$systolic_bp <- lm(CSTN3.ESLLLDTTSLQQR ~ VSBPSYS + AGE + DX, na.action=na.exclude, data=females)
+    f_CLSTN3$RAVLT <- lm(CSTN3.ESLLLDTTSLQQR ~ RAVLT.immediate + AGE + DX, na.action=na.exclude, data=females)
+    f_CLSTN3$digit_score <- lm(CSTN3.ESLLLDTTSLQQR ~ DIGITSCOR + AGE + DX, na.action=na.exclude, data=females)
+  # bind results
+  f_CLSTN3_results <- data.frame(t(do.call(cbind, lapply(f_CLSTN3, function(z)
+    summary(z)$coefficients[2,]))))
+  # FDR adjustment
+  f_CLSTN3_results <- f_CLSTN3_results %>% mutate(p_adj = p.adjust(as.numeric(f_CLSTN3_results[,4]),"BH"))
+  # Write CSV
+  write.csv(f_CLSTN3_results, "f_CLSTN3_results.csv")
+  
+  # males
+  m_CLSTN3 <- list()
+    m_CLSTN3$education <- lm(CSTN3.ESLLLDTTSLQQR ~ PTEDUCAT + AGE + DX, na.action=na.exclude, data=males)
+    m_CLSTN3$APOE4 <- lm(CSTN3.ESLLLDTTSLQQR ~ APOE4 + AGE + DX, na.action=na.exclude, data=males)
+    m_CLSTN3$BMI <- lm(CSTN3.ESLLLDTTSLQQR ~ BMI + AGE + DX, na.action=na.exclude, data=males)
+    m_CLSTN3$smoking <- lm(CSTN3.ESLLLDTTSLQQR ~ SMOK + AGE + DX, na.action=na.exclude, data=males)
+    m_CLSTN3$pulse <- lm(CSTN3.ESLLLDTTSLQQR ~ VSPULSE + AGE + DX, na.action=na.exclude, data=males)
+    m_CLSTN3$diastolic_bp <- lm(CSTN3.ESLLLDTTSLQQR ~ VSBPDIA + AGE + DX, na.action=na.exclude, data=males)
+    m_CLSTN3$systolic_bp <- lm(CSTN3.ESLLLDTTSLQQR ~ VSBPSYS + AGE + DX, na.action=na.exclude, data=males)
+    m_CLSTN3$RAVLT <- lm(CSTN3.ESLLLDTTSLQQR ~ RAVLT.immediate + AGE + DX, na.action=na.exclude, data=males)
+    m_CLSTN3$digit_score <- lm(CSTN3.ESLLLDTTSLQQR ~ DIGITSCOR + AGE + DX, na.action=na.exclude, data=males)
+  # bind results
+  m_CLSTN3_results <- data.frame(t(do.call(cbind, lapply(m_CLSTN3, function(z)
+    summary(z)$coefficients[2,]))))
+  # FDR adjustment
+  m_CLSTN3_results <- m_CLSTN3_results %>% mutate(p_adj = p.adjust(as.numeric(m_CLSTN3_results[,4]),"BH"))
+  # Write CSV
+  write.csv(m_CLSTN3_results, "m_CLSTN3_results.csv")
+  
+  
+# NEGR1
+  # females
+  f_NEGR <- list()
+    f_NEGR$education <- lm(NEGR1.SSIIFAGGDK ~ PTEDUCAT + AGE + DX, na.action=na.exclude, data=females)
+    f_NEGR$APOE4 <- lm(NEGR1.SSIIFAGGDK ~ APOE4 + AGE + DX, na.action=na.exclude, data=females)
+    f_NEGR$BMI <- lm(NEGR1.SSIIFAGGDK ~ BMI + AGE + DX, na.action=na.exclude, data=females)
+    f_NEGR$smoking <- lm(NEGR1.SSIIFAGGDK ~ SMOK + AGE + DX, na.action=na.exclude, data=females)
+    f_NEGR$pulse <- lm(NEGR1.SSIIFAGGDK ~ VSPULSE + AGE + DX, na.action=na.exclude, data=females)
+    f_NEGR$diastolic_bp <- lm(NEGR1.SSIIFAGGDK ~ VSBPDIA + AGE + DX, na.action=na.exclude, data=females)
+    f_NEGR$systolic_bp <- lm(NEGR1.SSIIFAGGDK ~ VSBPSYS + AGE + DX, na.action=na.exclude, data=females)
+    f_NEGR$RAVLT <- lm(NEGR1.SSIIFAGGDK ~ RAVLT.immediate + AGE + DX, na.action=na.exclude, data=females)
+    f_NEGR$digit_score <- lm(NEGR1.SSIIFAGGDK ~ DIGITSCOR + AGE + DX, na.action=na.exclude, data=females)
+  # bind results
+  f_NEGR_results <- data.frame(t(do.call(cbind, lapply(f_NEGR, function(z)
+    summary(z)$coefficients[2,]))))
+  # FDR adjustment
+  f_NEGR_results <- f_NEGR_results %>% mutate(p_adj = p.adjust(as.numeric(f_NEGR_results[,4]),"BH"))
+  # Write CSV
+  write.csv(f_NEGR_results, "f_NEGR_results.csv")
+  
+  # males
+  m_NEGR <- list()
+    m_NEGR$education <- lm(NEGR1.SSIIFAGGDK ~ PTEDUCAT + AGE + DX, na.action=na.exclude, data=males)
+    m_NEGR$APOE4 <- lm(NEGR1.SSIIFAGGDK ~ APOE4 + AGE + DX, na.action=na.exclude, data=males)
+    m_NEGR$BMI <- lm(NEGR1.SSIIFAGGDK ~ BMI + AGE + DX, na.action=na.exclude, data=males)
+    m_NEGR$smoking <- lm(NEGR1.SSIIFAGGDK ~ SMOK + AGE + DX, na.action=na.exclude, data=males)
+    m_NEGR$pulse <- lm(NEGR1.SSIIFAGGDK ~ VSPULSE + AGE + DX, na.action=na.exclude, data=males)
+    m_NEGR$diastolic_bp <- lm(NEGR1.SSIIFAGGDK ~ VSBPDIA + AGE + DX, na.action=na.exclude, data=males)
+    m_NEGR$systolic_bp <- lm(NEGR1.SSIIFAGGDK ~ VSBPSYS + AGE + DX, na.action=na.exclude, data=males)
+    m_NEGR$RAVLT <- lm(NEGR1.SSIIFAGGDK ~ RAVLT.immediate + AGE + DX, na.action=na.exclude, data=males)
+    m_NEGR$digit_score <- lm(NEGR1.SSIIFAGGDK ~ DIGITSCOR + AGE + DX, na.action=na.exclude, data=males)
+  # bind results
+  m_NEGR_results <- data.frame(t(do.call(cbind, lapply(m_NEGR, function(z)
+    summary(z)$coefficients[2,]))))
+  # FDR adjustment
+  m_NEGR_results <- m_NEGR_results %>% mutate(p_adj = p.adjust(as.numeric(m_NEGR_results[,4]),"BH"))
+  # Write CSV
+  write.csv(m_NEGR_results, "m_NEGR_results.csv")
   
   
 # Example structural equation modelling ====
