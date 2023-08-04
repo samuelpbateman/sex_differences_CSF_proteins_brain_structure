@@ -289,13 +289,6 @@ demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fus
                y = "ICV-corrected Hippocampal Volume",
                color= "Sex") + 
           theme_classic(base_size = 14)
-    # sensitivity analysis to remove extreme values and re-plot
-    d$CCL5_2 <- DescTools::Winsorize(d$T.Cell.Specific.Protein.RANTES..RANTES...ng.mL., maxval=1.5, minval=-1.5, na.rm=F)
-    HV_CCL5_2 <- lm(Hippocampus_corrected ~ CCL5_2 * PTGENDER + AGE + DX, na.action=na.exclude, data=d)
-      summary(HV_CCL5_2) # t = -2.426  p = 0.01602 *  
-      par(mfrow=c(2,2))
-      plot(HV_CCL5_2)
-      # all okay but case 60 skews qqplot at high end 
     # multicollinearity 
       library(car)
       vif(HV_CCL5_2) # all < 2 
@@ -408,9 +401,9 @@ demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fus
   f$CLSTN3 <- lm(Fusiform_corrected ~ CSTN3.ESLLLDTTSLQQR + AGE + DX, na.action=na.exclude, data=females)
   f$NEGR1 <- lm(Fusiform_corrected ~ NEGR1.SSIIFAGGDK + AGE + DX, na.action=na.exclude, data=females)
   
-  f_results <- do.call(cbind, lapply(f, function(z) 
-    summary(z)$coefficients[2,]))
-  f_results <- t(f_results)
+  f_results <- data.frame(t(do.call(cbind, lapply(f, function(z) 
+    summary(z)$coefficients[2,]))))
+  f_results <- f_results %>% mutate(p_adj = p.adjust(as.numeric(f_results[,4]),"BH"))
   write.csv(f_results, "sex_disaggregated_results_females.csv") # save 
   
   # Do the 3 proteins of interest sig predict their respective phenotypes in males
@@ -418,11 +411,11 @@ demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fus
   m <- list()
   m$CCL5 <- lm(Hippocampus_corrected ~ T.Cell.Specific.Protein.RANTES..RANTES...ng.mL. + AGE + DX, na.action=na.exclude, data=males)
   m$CLSTN3 <- lm(Fusiform_corrected ~ CSTN3.ESLLLDTTSLQQR + AGE + DX, na.action=na.exclude, data=males)
-  m$NEGR1 <- lm(Fusiform_corrected ~ NEGR1.SSIIFAGGDK + AGE + DX, na.action=na.exclude, data=males)
+  m$NEGR1 <- lm(Fusiform_corrected ~ NEGR1.SSIIFAGGDK + AGE s+ DX, na.action=na.exclude, data=males)
   
-  m_results <- do.call(cbind, lapply(m, function(z) 
-    summary(z)$coefficients[2,]))
-  m_results <- t(m_results)
+  m_results <- data.frame(t(do.call(cbind, lapply(m, function(z) 
+    summary(z)$coefficients[2,]))))
+  m_results <- m_results %>% mutate(p_adj = p.adjust(as.numeric(m_results[,4]),"BH"))
   write.csv(m_results, "sex_disaggregated_results_males.csv") # save 
   # 
   
