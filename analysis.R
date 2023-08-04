@@ -122,9 +122,9 @@ demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fus
         x[grepl("p:PTGENDER", rownames(x)),]) # extract only interaction terms
       BV_proteins_robustSE_int_coef_df <- as.data.frame(do.call(rbind, BV_proteins_robustSE_int_coef)) # convert to table and df
       # FDR correction
-      BV_proteins_rSE_finidngs <- BV_proteins_robustSE_int_coef_df %>% 
+      BV_proteins_rSE_findings <- BV_proteins_robustSE_int_coef_df %>% 
         mutate(p_adj = p.adjust(as.numeric(BV_proteins_robustSE_int_coef_df[,4], "BH")))
-      write.csv(BV_proteins_rSE_finidngs, "BV_proteins_table_rSE.csv", row.names = T) # all vars
+      write.csv(BV_proteins_rSE_findings, "BV_proteins_table_rSE.csv", row.names = T) # all vars
       # make qqplot of robust SE p values
       GWASTools::qqPlot(BV_proteins_robustSE_int_coef_table[,4], ci = T, main = "Total Brain Robust SE")
         
