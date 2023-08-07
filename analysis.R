@@ -512,6 +512,7 @@ hist(d$VSPULSE) # roughly normal
   CCL5_results <- CCL5_results %>% mutate(p_adj = p.adjust(as.numeric(CCL5_results[,4]),"BH"))
   write.csv(CCL5_results, "CCL5_results.csv") # save 
   
+  par(mfrow=c(4,4))
   lapply(CCL5, function(x)
     plot(x)) # show diagnostic plots for all proteins. Notes taken elsewhere 
   
@@ -538,6 +539,7 @@ hist(d$VSPULSE) # roughly normal
   CCL5sqrt_results <- CCL5sqrt_results %>% mutate(p_adj = p.adjust(as.numeric(CCL5sqrt_results[,4]),"BH"))
   write.csv(CCL5sqrt_results, "CCL5sqrt_results.csv")
   
+  par(mfrow=c(4,4))
   lapply(CCL5sqrt, function(x)
     plot(x))
   
@@ -560,6 +562,7 @@ hist(d$VSPULSE) # roughly normal
   CLSTN3_results <- CLSTN3_results %>% mutate(p_adj = p.adjust(as.numeric(CLSTN3_results[,4]),"BH"))
   write.csv(CLSTN3_results, "CLSTN3_results.csv")
 
+  par(mfrow=c(4,4))
   lapply(CLSTN3, function(x)
     plot(x)) # show diagnostic plots for all proteins. Notes taken elsewhere 
   
@@ -584,6 +587,7 @@ hist(d$VSPULSE) # roughly normal
   # write csv
   write.csv(NEGR1_results, "NEGR1_results.csv")
   
+  par(mfrow=c(4,4))
   lapply(NEGR1, function(x)
     plot(x)) # show diagnostic plots for all proteins. Notes taken elsewhere
   
@@ -612,6 +616,10 @@ males <- subset(d, d$PTGENDER == "Male")
   # Write CSV
   write.csv(f_CCL5_results, "f_CCL5_results.csv")
   
+  par(mfrow=c(4,4))
+  lapply(f_CCL5, function(x)
+    plot(x)) # show diagnostic plots for all proteins. Notes taken elsewhere 
+  
   # males
   m_CCL5 <- list()
     m_CCL5$education <- lm(sqrt(T.Cell.Specific.Protein.RANTES..RANTES...ng.mL.) ~ PTEDUCAT + AGE + DX, na.action=na.exclude, data=males)
@@ -630,6 +638,10 @@ males <- subset(d, d$PTGENDER == "Male")
   m_CCL5_results <- m_CCL5_results %>% mutate(p_adj = p.adjust(as.numeric(m_CCL5_results[,4]),"BH"))
   # Write CSV
   write.csv(m_CCL5_results, "m_CCL5_results.csv")
+  
+  par(mfrow=c(4,4))
+  lapply(m_CCL5, function(x)
+    plot(x)) # show diagnostic plots for all proteins. Notes taken elsewhere 
     
 # CLSTN3
   # females
@@ -651,6 +663,10 @@ males <- subset(d, d$PTGENDER == "Male")
   # Write CSV
   write.csv(f_CLSTN3_results, "f_CLSTN3_results.csv")
   
+  par(mfrow=c(4,4))
+  lapply(f_CLSTN3, function(x)
+    plot(x)) # show diagnostic plots for all proteins. Notes taken elsewhere 
+  
   # males
   m_CLSTN3 <- list()
     m_CLSTN3$education <- lm(CSTN3.ESLLLDTTSLQQR ~ PTEDUCAT + AGE + DX, na.action=na.exclude, data=males)
@@ -669,6 +685,10 @@ males <- subset(d, d$PTGENDER == "Male")
   m_CLSTN3_results <- m_CLSTN3_results %>% mutate(p_adj = p.adjust(as.numeric(m_CLSTN3_results[,4]),"BH"))
   # Write CSV
   write.csv(m_CLSTN3_results, "m_CLSTN3_results.csv")
+  
+  par(mfrow=c(4,4))
+  lapply(m_CLSTN3, function(x)
+    plot(x)) # show diagnostic plots for all proteins. Notes taken elsewhere 
   
   
 # NEGR1
@@ -691,6 +711,10 @@ males <- subset(d, d$PTGENDER == "Male")
   # Write CSV
   write.csv(f_NEGR_results, "f_NEGR_results.csv")
   
+  par(mfrow=c(4,4))
+  lapply(f_NEGR, function(x)
+    plot(x)) # show diagnostic plots for all proteins. Notes taken elsewhere 
+  
   # males
   m_NEGR <- list()
     m_NEGR$education <- lm(NEGR1.SSIIFAGGDK ~ PTEDUCAT + AGE + DX, na.action=na.exclude, data=males)
@@ -709,6 +733,10 @@ males <- subset(d, d$PTGENDER == "Male")
   m_NEGR_results <- m_NEGR_results %>% mutate(p_adj = p.adjust(as.numeric(m_NEGR_results[,4]),"BH"))
   # Write CSV
   write.csv(m_NEGR_results, "m_NEGR_results.csv")
+  
+  par(mfrow=c(4,4))
+  lapply(m_NEGR, function(x)
+    plot(x)) # show diagnostic plots for all proteins. Notes taken elsewhere 
   
   
 # Example structural equation modelling ====
