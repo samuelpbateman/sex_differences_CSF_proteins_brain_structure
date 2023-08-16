@@ -250,8 +250,6 @@ demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fus
                color = "Sex") +
           theme_classic(base_size = 14)
           # plot shows significant skew from a few v low winsorized cases. Stronger p cor in F than M
-  # effect size 
-  eta_squared(WB_CNTNAP2) # 0.01=2 (0.00, 1)
     # sensitivity analysis to remove extreme values and re-plot
     d$CNTNAP2_2 <- DescTools::Winsorize(d$CNTP2.VDNAPDQQNSHPDLAQEEIR, maxval=1.5, minval=-1.5, na.rm=F)
     WB_CNTNAP2_2 <- lm(WholeBrain_corrected ~ CNTNAP2_2 * PTGENDER + AGE + DX, na.action=na.exclude, data=d)
@@ -376,8 +374,7 @@ demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fus
            x = "Scaled and Centred NEGR1 Concentration", 
            y = "ICV-corrected Fusiform Gyrus Volume") + 
       theme_classic(base_size = 14) \
-  # effect size 
-    eta_squared(FG_NEGR1) # 0.04 (LCI: 0.01 - UCI: 1.00)
+
     ## plot by DX
     d %>% ggplot(., aes(x = NEGR1.SSIIFAGGDK, y= Fusiform_corrected, colour = PTGENDER)) + 
       geom_smooth(method = lm) + 
