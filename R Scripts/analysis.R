@@ -232,7 +232,7 @@ demTable2 %>% select(DX, PTGENDER, ICV, WholeBrain, Ventricles, Hippocampus, Fus
   # CNTNAP2
   WB_CNTNAP2 <- lm(WholeBrain_corrected ~ CNTP2.VDNAPDQQNSHPDLAQEEIR * PTGENDER + AGE + DX, na.action=na.exclude, data=d)
   confint(WB_CNTNAP2)
-  par(mfrow=c(2,2))
+  par(mfrow=c(5,4))
   plot(WB_CNTNAP2)
     # resid vs fitted: roughly horizontal, fine
     # qq: fine
